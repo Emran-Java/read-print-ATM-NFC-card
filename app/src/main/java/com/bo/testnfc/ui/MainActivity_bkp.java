@@ -12,16 +12,12 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bo.testnfc.R;
-import com.bo.testnfc.app_data.Constant;
 import com.bo.testnfc.system.MyApplication;
 import com.bo.testnfc.utility.LogUtil;
 import com.bo.testnfc.utility.SystemDateTime;
 import com.bo.testnfc.utility.Utility;
 import com.bo.testnfc.wrapper.CheckCardCallbackV2Wrapper;
 import com.sunmi.pay.hardware.aidl.AidlConstants.CardType;
-import com.sunmi.pay.hardware.aidl.bean.CardInfo;
-import com.sunmi.pay.hardware.aidlv2.bean.EMVTransDataV2;
-import com.sunmi.pay.hardware.aidlv2.emv.EMVOptV2;
 import com.sunmi.pay.hardware.aidlv2.readcard.CheckCardCallbackV2;
 import com.sunmi.peripheral.printer.InnerResultCallback;
 import com.sunmi.peripheral.printer.SunmiPrinterService;
@@ -29,14 +25,13 @@ import com.sunmi.peripheral.printer.SunmiPrinterService;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class MainActivity extends AppCompatActivity {
-    int mCarType=0;
-    private TextView tvDisplayMsg;
+public class MainActivity_bkp extends AppCompatActivity {
+
+    private TextView txtDisplayMsg;
     private Button btnNFC;
     private Button btnPrint;
 
     private SunmiPrinterService sunmiPrinterService;
-    private EMVOptV2 emvOptV2 = MyApplication.app.emvOptV2;
 
     private static final String TAG = "TestNFC";
 
@@ -90,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
     private void initView() {
 
         setContentView(R.layout.activity_main);
-        tvDisplayMsg = findViewById(R.id.txtDisplayMsg);
+        txtDisplayMsg = findViewById(R.id.txtDisplayMsg);
 
         btnNFC = findViewById(R.id.btnNFC);
         btnPrint = findViewById(R.id.btnPrint);
@@ -140,15 +135,9 @@ public class MainActivity extends AppCompatActivity {
          */
         @Override
         public void findRFCardEx(Bundle info) throws RemoteException {
-            mCarType = CardType.NFC.getValue();
-
             addEndTime("checkCard()");
             LogUtil.e(TAG, "findRFCard:" + Utility.bundle2String(info));
-
             handleResult(true, info);
-
-            transactProcess();
-
             showSpendTime();
         }
 
@@ -168,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
             String error = "onError:" + msg + " -- " + code;
             LogUtil.e(TAG, error);
             showToast(error);
-            tvDisplayMsg.setText(error);
+            txtDisplayMsg.setText(error);
             handleResult(false, info);
             showSpendTime();
         }
@@ -205,8 +194,14 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         handler.post(() -> {
+//            totalCount++;
             if (success) {
-
+//                successCount++;
+                /*tvDepictor.setText(getString(R.string.card_check_rf_card));
+                tvCardType.setText(getCardType(info.getInt("cardType")));
+                tvCardCate.setText(getCardCategory(info.getInt("cardCategory")));
+                tvUUID.setText(info.getString("uuid"));
+                tvAts.setText(info.getString("ats"));*/
 
                 result = "Depictor: Find RF card\n" +
                         "CardType: " + getCardType(info.getInt("cardType")) + "\n" +
@@ -214,12 +209,18 @@ public class MainActivity extends AppCompatActivity {
                         "UUID: " + info.getString("uuid") + "\n" +
                         "Ats: " + info.getString("ats") + "\n" +
                         "";
-            } else {
+            } else {//on Error
+//                failCount++;
+//                tvDepictor.setText(getString(R.string.card_check_card_error));
                 result = "Depicter: Check card error";
             }
 
-            tvDisplayMsg.setText(result);
+            /*tvTotal.setText(Utility.formatStr("%s %d", getString(R.string.card_total), totalCount));
+            tvSuccess.setText(Utility.formatStr("%s %d", getString(R.string.card_success), successCount));
+            tvFail.setText(Utility.formatStr("%s %d", getString(R.string.card_fail), failCount));*/
 
+            txtDisplayMsg.setText(result);
+            // 继续检卡
             if (!isFinishing()) {
                 handler.postDelayed(this::checkCard, 500);
             }
@@ -238,12 +239,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void checkCard() {
         try {
-            mCarType = CardType.NFC.getValue() | CardType.MIFARE.getValue() | CardType.FELICA.getValue() | CardType.ISO15693.getValue();
+            int cardType = CardType.NFC.getValue() | CardType.MIFARE.getValue() | CardType.FELICA.getValue() | CardType.ISO15693.getValue();
             addStartTimeWithClear("checkCard()");
-            MyApplication.app.readCardOptV2.checkCard(mCarType, mCheckCardCallback, 60);
-            if(emvOptV2==null)
-                emvOptV2 = MyApplication.app.emvOptV2;
-
+            MyApplication.app.readCardOptV2.checkCard(cardType, mCheckCardCallback, 60);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -280,7 +278,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     /************************************************************/
-    /*for printer*/
+     /*for printer*/
     /************************************************************/
     private void onPrintClick() {
         try {
@@ -356,47 +354,6 @@ public class MainActivity extends AppCompatActivity {
             showSpendTime();
         }
     };
-
-
-
-
-    private void transactProcess() {
-        LogUtil.e(Constant.TAG, "transactProcess");
-        try {
-            EMVTransDataV2 emvTransData = new EMVTransDataV2();
-            emvTransData.amount = "1";
-            emvTransData.flowType = 0x02;
-            emvTransData.cardType = mCarType;
-//            addTransactionStartTimes();
-
-//            GetCardInfo.getInstance(this, emvOptV2).getEMVListener();
-//            emvOptV2.transactProcess(emvTransData, mEMVListener);
-
-            GetCardInfo mGetCardInfo =GetCardInfo.getInstance(this, emvOptV2);
-            emvOptV2.transactProcess(emvTransData, mGetCardInfo.getEMVListener());
-
-            mGetCardInfo.getCardInfoListener(new ListenCardInfo() {
-                @Override
-                public void onListenCardInfo(CardInfo cardInfo) {
-                    String displayMessage = "CardNo: " + cardInfo.cardNo + " \nExpireDate: " + cardInfo.expireDate + " \nServiceCode: " + cardInfo.serviceCode;
-                    //tvCardNo.setText(displayMessage);
-                    result=displayMessage+"\n"+result;
-                    tvDisplayMsg.setText(result);
-                    LogUtil.e(Constant.TAG, "cardNumber::" + cardInfo.cardNo + " expireDate:" + cardInfo.expireDate + " serviceCode:" + cardInfo.serviceCode);
-                }
-
-                @Override
-                public void onListenCardInfoError(String errorMessage) {
-                    showToast(errorMessage);
-                }
-            });
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-
 
 
     //helper functions
