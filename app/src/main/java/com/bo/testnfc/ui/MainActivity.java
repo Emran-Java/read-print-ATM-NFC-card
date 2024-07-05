@@ -30,7 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
-    int mCarType=0;
+    private int mCarType=0;
     private TextView tvDisplayMsg;
     private Button btnNFC;
     private Button btnPrint;

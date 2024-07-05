@@ -4,6 +4,9 @@
     <!-- for NFC card read -->
     <uses-permission android:name="com.sunmi.perm.CONTACTLESS_CARD" />
     <uses-permission android:name="com.sunmi.perm.ICC" />
+    <!--  for magnetic  -->
+    <uses-permission android:name="com.sunmi.perm.SECURITY" />
+    <uses-permission android:name="com.sunmi.perm.MSR" />
 
     <application
         android:name=".system.MyApplication"
@@ -21,6 +24,9 @@
             android:exported="false" />
         <activity
             android:name=".ui.NfcIcActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.MagneticNfcIcActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
