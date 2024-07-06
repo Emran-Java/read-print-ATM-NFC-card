@@ -213,7 +213,7 @@ public class GetCardInfo {
                 mListenCardInfo.onListenCardInfoError("TextUtils.isEmpty");
             }
         } catch (RemoteException e) {
-            mListenCardInfo.onListenCardInfoError(e.getMessage());
+            mListenCardInfo.onListenCardInfoError("RemoteException: "+e.getMessage());
             e.printStackTrace();
         }
 //        return "";

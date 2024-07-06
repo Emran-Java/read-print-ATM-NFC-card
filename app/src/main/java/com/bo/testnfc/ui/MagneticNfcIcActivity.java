@@ -25,6 +25,7 @@ import com.sunmi.pay.hardware.aidlv2.bean.EMVTransDataV2;
 import com.sunmi.pay.hardware.aidlv2.emv.EMVOptV2;
 import com.sunmi.pay.hardware.aidlv2.readcard.CheckCardCallbackV2;
 
+import java.util.List;
 import java.util.Map;
 
 public class MagneticNfcIcActivity extends AppCompatActivity {
@@ -151,10 +152,16 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
         bundle.putChar("encMaskWord", '*');
         bundle.putInt("ctrCode", 0);
         bundle.putInt("stopOnError", 0);
+
         try {
+            if(emvOptV2==null)
+                emvOptV2 = MyApplication.app.emvOptV2;
+            emvOptV2.initEmvProcess();
 //            addStartTimeWithClear("checkCard()");
-            int code = MyApplication.app.readCardOptV2.checkCardEnc(bundle, mCheckCardCallback, 60);
-            LogUtil.e(Constant.TAG, "checkCardEnc(), code:" + code);
+//            int code = MyApplication.app.readCardOptV2.checkCardEnc(bundle, mCheckCardCallback, 60);
+            int cardType = AidlConstantsV2.CardType.MAGNETIC.getValue();
+            MyApplication.app.readCardOptV2.checkCard(cardType, mCheckCardCallback, 60);
+            //LogUtil.e(Constant.TAG, "checkCardEnc(), code:" + code+"cardType: "+AidlConstants.CardType.MAGNETIC.getValue());
         } catch (Exception e) {
             e.printStackTrace();
             LogUtil.d(Constant.TAG, e.getMessage());
@@ -195,14 +202,36 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
         public void findMagCard(Bundle bundle) throws RemoteException {
 
             LogUtil.e(Constant.TAG, "findMagCard");
-            String pan = bundle.getString("pan");
+
+            String track1 = Utility.null2String(bundle.getString("TRACK1"));
+            String track2 = Utility.null2String(bundle.getString("TRACK2"));
+            String track3 = Utility.null2String(bundle.getString("TRACK3"));
+            runOnUiThread(() -> {
+                String value = "track1:" + track1 + "\ntrack2:" + track2 + "\ntrack3:" + track3;
+
+                LogUtil.e(Constant.TAG, "value: "+value);
+
+                //6229342404220087D330622033282569000F
+                //6229344706739327=250822079305154000
+                try{
+//                    String[] info = track2.split("D");
+                    String cardNo = track2.substring(0, 16);
+                    String expDt = track2.substring(17, 21);
+                    showDisplay(cardNo,expDt);
+                }catch (Exception ex){showToast(ex.getMessage());}
+            });
+
+
+            /*String pan = bundle.getString("pan");
             String name = bundle.getString("name");
             String expire = bundle.getString("expire");
             String serviceCode = bundle.getString("servicecode");
             String result = "pan = " + pan + "\nname = " + name + "\nexpire = " + expire + "\nserviceCode = " + serviceCode;
-            tvCardNo.setText(result);
+
             LogUtil.e(Constant.TAG, "pan = " + pan + ",name = " + name + ",expire = " + expire + ",serviceCode = " + serviceCode);
-           // handleResult(bundle);
+            mCarType = AidlConstantsV2.CardType.MAGNETIC.getValue();*/
+            transactProcess();
+            // handleResult(bundle);
 
         }
 
@@ -216,7 +245,7 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
                     () -> {
                         String text = "atr: " + atr;
                         LogUtil.e("dMoneyLog", "card_atr:" + atr);
-                        tvCardNo.setText(text);
+                        showDisplay(atr,null);
                     }
             );
             transactProcess();
@@ -233,7 +262,7 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
         public void findICCardEx(Bundle info) throws RemoteException {
 //            addEndTime("checkCard()");
             LogUtil.e(Constant.TAG, "findICCard_*_*:" + Utility.bundle2String(info));
-            tvCardNo.setText(Utility.bundle2String(info));
+//            tvCardNo.setText(Utility.bundle2String(info));
 //            handleResult(true, info);
 //            showSpendTime();
         }
@@ -279,6 +308,14 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
         }
     };
 
+    private void showDisplay(String cardNo, String expDt) {
+        if(cardNo==null)
+            cardNo="";
+        if(expDt==null)
+            expDt="";
+        tvCardNo.setText("cardNo: "+cardNo+"\nExpire Date: "+expDt);
+    }
+
     private void transactProcess() {
         LogUtil.e(Constant.TAG, "transactProcess");
         try {
@@ -298,7 +335,8 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
                 @Override
                 public void onListenCardInfo(CardInfo cardInfo) {
                     String displayMessage = "CardNo: " + cardInfo.cardNo + " \nExpireDate: " + cardInfo.expireDate + " \nServiceCode: " + cardInfo.serviceCode;
-                    tvCardNo.setText(displayMessage);
+//                    tvCardNo.setText(displayMessage);
+                    showDisplay(cardInfo.cardNo,cardInfo.expireDate);
                     LogUtil.e(Constant.TAG, "cardNumber::" + cardInfo.cardNo + " expireDate:" + cardInfo.expireDate + " serviceCode:" + cardInfo.serviceCode);
                 }
 
