@@ -25,7 +25,6 @@ import com.sunmi.pay.hardware.aidlv2.bean.EMVTransDataV2;
 import com.sunmi.pay.hardware.aidlv2.emv.EMVOptV2;
 import com.sunmi.pay.hardware.aidlv2.readcard.CheckCardCallbackV2;
 
-import java.util.List;
 import java.util.Map;
 
 public class MagneticNfcIcActivity extends AppCompatActivity {
@@ -40,7 +39,7 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
     private Button btnNFC,btnMag;
 
     private TextView tvCardNo;
-    GetCardInfo mGetCardInfo;
+    GetEMVCardInfo mGetEMVCardInfo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -231,7 +230,6 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
             LogUtil.e(Constant.TAG, "pan = " + pan + ",name = " + name + ",expire = " + expire + ",serviceCode = " + serviceCode);
             mCarType = AidlConstantsV2.CardType.MAGNETIC.getValue();*/
             transactProcess();
-            // handleResult(bundle);
 
         }
 
@@ -328,10 +326,10 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
 //            GetCardInfo.getInstance(this, emvOptV2).getEMVListener();
 //            emvOptV2.transactProcess(emvTransData, mEMVListener);
 
-            mGetCardInfo =GetCardInfo.getInstance(this, emvOptV2);
-            emvOptV2.transactProcess(emvTransData, mGetCardInfo.getEMVListener());
+            mGetEMVCardInfo = GetEMVCardInfo.getInstance(this, emvOptV2);
+            emvOptV2.transactProcess(emvTransData, mGetEMVCardInfo.getEMVListener());
 
-            mGetCardInfo.getCardInfoListener(new ListenCardInfo() {
+            mGetEMVCardInfo.getCardInfoListener(new ListenEMVCardInfo() {
                 @Override
                 public void onListenCardInfo(CardInfo cardInfo) {
                     String displayMessage = "CardNo: " + cardInfo.cardNo + " \nExpireDate: " + cardInfo.expireDate + " \nServiceCode: " + cardInfo.serviceCode;

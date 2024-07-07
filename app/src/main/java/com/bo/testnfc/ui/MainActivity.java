@@ -372,10 +372,10 @@ public class MainActivity extends AppCompatActivity {
 //            GetCardInfo.getInstance(this, emvOptV2).getEMVListener();
 //            emvOptV2.transactProcess(emvTransData, mEMVListener);
 
-            GetCardInfo mGetCardInfo =GetCardInfo.getInstance(this, emvOptV2);
-            emvOptV2.transactProcess(emvTransData, mGetCardInfo.getEMVListener());
+            GetEMVCardInfo mGetEMVCardInfo = GetEMVCardInfo.getInstance(this, emvOptV2);
+            emvOptV2.transactProcess(emvTransData, mGetEMVCardInfo.getEMVListener());
 
-            mGetCardInfo.getCardInfoListener(new ListenCardInfo() {
+            mGetEMVCardInfo.getCardInfoListener(new ListenEMVCardInfo() {
                 @Override
                 public void onListenCardInfo(CardInfo cardInfo) {
                     String displayMessage = "CardNo: " + cardInfo.cardNo + " \nExpireDate: " + cardInfo.expireDate + " \nServiceCode: " + cardInfo.serviceCode;

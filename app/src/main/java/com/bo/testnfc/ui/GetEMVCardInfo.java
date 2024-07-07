@@ -21,20 +21,20 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class GetCardInfo {
+public class GetEMVCardInfo {
 
-    ListenCardInfo mListenCardInfo;
+    ListenEMVCardInfo mListenEMVCardInfo;
     private EMVOptV2 emvOptV2;
     private Activity mActivity;
 
-    private static GetCardInfo singleInstance = null;
-    private GetCardInfo(Activity activity, EMVOptV2 eMvOptV2){
+    private static GetEMVCardInfo singleInstance = null;
+    private GetEMVCardInfo(Activity activity, EMVOptV2 eMvOptV2){
         mActivity = activity; emvOptV2 = eMvOptV2;
     }
-    public static synchronized GetCardInfo getInstance(Activity activity, EMVOptV2 eMvOptV2)
+    public static synchronized GetEMVCardInfo getInstance(Activity activity, EMVOptV2 eMvOptV2)
     {
         if (singleInstance == null){
-            singleInstance = new GetCardInfo(activity,eMvOptV2);
+            singleInstance = new GetEMVCardInfo(activity,eMvOptV2);
 
         }
 
@@ -42,8 +42,8 @@ public class GetCardInfo {
     }
 
 
-    void getCardInfoListener(ListenCardInfo listenCardInfo){
-        mListenCardInfo = listenCardInfo;
+    void getCardInfoListener(ListenEMVCardInfo listenEMVCardInfo){
+        mListenEMVCardInfo = listenEMVCardInfo;
     }
 
     public EMVListenerV2 getEMVListener (){
@@ -118,7 +118,7 @@ public class GetCardInfo {
             LogUtil.e(Constant.TAG, "****************************End Process************************");
             LogUtil.e(Constant.TAG, "***************************************************************");
             CardInfo cardInfo = getCardNo();
-            mListenCardInfo.onListenCardInfo(cardInfo);
+            mListenEMVCardInfo.onListenCardInfo(cardInfo);
             //tvCardNo.setText(mCardNo);
             //showSpendTime();
             //getExpireDateAndCardholderName();
@@ -210,10 +210,10 @@ public class GetCardInfo {
                 return cardInfo;
             }
             else{
-                mListenCardInfo.onListenCardInfoError("TextUtils.isEmpty");
+                mListenEMVCardInfo.onListenCardInfoError("TextUtils.isEmpty");
             }
         } catch (RemoteException e) {
-            mListenCardInfo.onListenCardInfoError("RemoteException: "+e.getMessage());
+            mListenEMVCardInfo.onListenCardInfoError("RemoteException: "+e.getMessage());
             e.printStackTrace();
         }
 //        return "";

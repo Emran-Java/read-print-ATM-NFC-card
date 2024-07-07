@@ -4,7 +4,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.os.RemoteException;
-import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -15,24 +14,15 @@ import com.bo.testnfc.app_data.Constant;
 import com.bo.testnfc.system.MyApplication;
 import com.bo.testnfc.utility.LogUtil;
 import com.bo.testnfc.utility.emv.EmvUtil;
-import com.bo.testnfc.utility.nfc_ic.TLV;
-import com.bo.testnfc.utility.nfc_ic.TLVUtil;
 import com.bo.testnfc.utility.nfc_ic.ThreadPoolUtil;
 import com.bo.testnfc.wrapper.CheckCardCallbackV2Wrapper;
 import com.sunmi.pay.hardware.aidl.bean.CardInfo;
 import com.sunmi.pay.hardware.aidlv2.AidlConstantsV2;
-import com.sunmi.pay.hardware.aidlv2.bean.EMVCandidateV2;
 import com.sunmi.pay.hardware.aidlv2.bean.EMVTransDataV2;
-import com.sunmi.pay.hardware.aidlv2.emv.EMVListenerV2;
 import com.sunmi.pay.hardware.aidlv2.emv.EMVOptV2;
 import com.sunmi.pay.hardware.aidlv2.readcard.CheckCardCallbackV2;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class NfcIcActivity extends AppCompatActivity {
 
@@ -42,7 +32,7 @@ public class NfcIcActivity extends AppCompatActivity {
     private Button btnNFC;
 
     private TextView tvCardNo;
-    GetCardInfo mGetCardInfo;
+    private GetEMVCardInfo mGetEMVCardInfo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -163,10 +153,10 @@ public class NfcIcActivity extends AppCompatActivity {
 //            GetCardInfo.getInstance(this, emvOptV2).getEMVListener();
 //            emvOptV2.transactProcess(emvTransData, mEMVListener);
 
-            mGetCardInfo =GetCardInfo.getInstance(this, emvOptV2);
-            emvOptV2.transactProcess(emvTransData, mGetCardInfo.getEMVListener());
+            mGetEMVCardInfo = GetEMVCardInfo.getInstance(this, emvOptV2);
+            emvOptV2.transactProcess(emvTransData, mGetEMVCardInfo.getEMVListener());
 
-            mGetCardInfo.getCardInfoListener(new ListenCardInfo() {
+            mGetEMVCardInfo.getCardInfoListener(new ListenEMVCardInfo() {
                 @Override
                 public void onListenCardInfo(CardInfo cardInfo) {
                     String displayMessage = "CardNo: " + cardInfo.cardNo + " \nExpireDate: " + cardInfo.expireDate + " \nServiceCode: " + cardInfo.serviceCode;
