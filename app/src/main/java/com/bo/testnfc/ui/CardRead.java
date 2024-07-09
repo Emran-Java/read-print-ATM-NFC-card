@@ -1,18 +1,14 @@
 package com.bo.testnfc.ui;
 
+import android.app.Activity;
 import android.os.Bundle;
+import android.os.Looper;
 import android.os.RemoteException;
-import android.view.View;
-import android.widget.Button;
-import android.widget.TextView;
-import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
-
-import com.bo.testnfc.R;
 import com.bo.testnfc.app_data.Constant;
 import com.bo.testnfc.system.MyApplication;
 import com.bo.testnfc.utility.ByteUtil;
+import com.bo.testnfc.utility.DeviceUtil;
 import com.bo.testnfc.utility.LogUtil;
 import com.bo.testnfc.utility.Utility;
 import com.bo.testnfc.utility.emv.EmvUtil;
@@ -27,35 +23,54 @@ import com.sunmi.pay.hardware.aidlv2.readcard.CheckCardCallbackV2;
 
 import java.util.Map;
 
-public class MagneticNfcIcActivity extends AppCompatActivity {
+public class CardRead {
 
-    // for magnetic
-    private static final int TDK_INDEX = 19;
-    //---------------
+    private CardReadListener mCardReadListener;
+    private static CardRead mCardRead;
+    private Activity mActivity;
 
+    private GetEMVCardInfo mGetEMVCardInfo;
     private EMVOptV2 emvOptV2 = MyApplication.app.emvOptV2;
     private int mCarType;
+    private static final int TDK_INDEX = 19;
+    private CardInfo mCardInfo = new CardInfo();
 
-    private Button btnNFC,btnMag;
 
-    private TextView tvCardNo;
-    private GetEMVCardInfo mGetEMVCardInfo;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        initView();
+    private CardRead(Activity activity){
+        mActivity = activity;
         connectToSDK();
+    }
 
-        initFunctionality();
+    public synchronized static CardRead getInstance(Activity activity){
+        if(mCardRead==null){
+            mCardRead = new CardRead(activity);
+        }
+        return mCardRead;
+    }
 
-        initListener();
+    private void connectToSDK() {
+        if (!MyApplication.app.isConnectPaySDK()) {
+            MyApplication.app.bindPaySDKService();
+            // showToast("connecting to sdk");
+            //return;
+        } else {
+            //showToast("SDK connected");
+        }
+    }
+
+    public void readToReadCard(){
+
+        /*ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+        scheduler.schedule(() -> {
+            checkForMagnetic();
+        }, 1, TimeUnit.SECONDS);*/
+
+        checkForMagnetic();
 
     }
 
-    private void initFunctionality() {
-        //20240707, apatoto lagtesena
-        //for NFC (reference from RuPay)
+    private void
+    checkForMagnetic() {
         ThreadPoolUtil.executeInCachePool(
                 () -> {
                     EmvUtil.initKey();
@@ -64,58 +79,24 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
                     EmvUtil.setTerminalParam(map);
                 }
         );
-    }
 
-    private void initListener() {
-
-        btnNFC.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                tvCardNo.setText("Ready");
-                checkCard();
-            }
-        });
-
-        btnMag.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                tvCardNo.setText("Ready");
-                checkForMagnetic();
-            }
-        });
-    }
-
-    private void checkForMagnetic() {
         saveTDKMagEnc();
         checkCardMagEnc();
     }
 
-    private void initView() {
-        setContentView(R.layout.activity_mag_nfc_ic);
-        tvCardNo = findViewById(R.id.tvCardNo);
-        btnNFC = findViewById(R.id.btnNFC);
-        btnMag = findViewById(R.id.btnMag);
-    }
 
-    private void connectToSDK() {
-        if (!MyApplication.app.isConnectPaySDK()) {
-            MyApplication.app.bindPaySDKService();
-            showToast("connecting to sdk");
-            //return;
-        } else {
-            showToast("SDK connected");
+    private void checkCard() {
+        try {
+            if(emvOptV2==null)
+                emvOptV2 = MyApplication.app.emvOptV2;
+
+            int cardType = AidlConstantsV2.CardType.NFC.getValue() | AidlConstantsV2.CardType.IC.getValue();
+
+            MyApplication.app.readCardOptV2.checkCard(cardType, mCheckCardCallback, 60);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
-
-    //SIM/IC
-
-
-
-
-
-
-
-
 
 
     /*Magnetic*/
@@ -139,6 +120,7 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
      * start check card
      */
     private void checkCardMagEnc() {
+/*
         Bundle bundle = new Bundle();
         bundle.putInt("cardType", AidlConstants.CardType.MAGNETIC.getValue());
         bundle.putInt("encKeySystem", AidlConstants.Security.SEC_MKSK);
@@ -152,6 +134,7 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
         bundle.putChar("encMaskWord", '*');
         bundle.putInt("ctrCode", 0);
         bundle.putInt("stopOnError", 0);
+*/
 
         try {
             if(emvOptV2==null)
@@ -159,7 +142,14 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
             emvOptV2.initEmvProcess();
 //            addStartTimeWithClear("checkCard()");
 //            int code = MyApplication.app.readCardOptV2.checkCardEnc(bundle, mCheckCardCallback, 60);
-            int cardType = AidlConstantsV2.CardType.MAGNETIC.getValue();
+//            int cardType = AidlConstantsV2.CardType.MAGNETIC.getValue();
+
+            int cardType = AidlConstants.CardType.MAGNETIC.getValue() | AidlConstants.CardType.IC.getValue() | AidlConstants.CardType.NFC.getValue();
+            if (DeviceUtil.isTossTerminal()) {
+                cardType &= ~AidlConstants.CardType.NFC.getValue();
+            }
+            mCarType = cardType;
+
             MyApplication.app.readCardOptV2.checkCard(cardType, mCheckCardCallback, 60);
             //LogUtil.e(Constant.TAG, "checkCardEnc(), code:" + code+"cardType: "+AidlConstants.CardType.MAGNETIC.getValue());
         } catch (Exception e) {
@@ -168,33 +158,6 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    private void checkCard() {
-        try {
-            if(emvOptV2==null)
-                emvOptV2 = MyApplication.app.emvOptV2;
-            emvOptV2.initEmvProcess(); // clear all TLV data
-           // showLoadingDialog("swipe card or insert card");
-            int cardType = AidlConstantsV2.CardType.NFC.getValue() | AidlConstantsV2.CardType.IC.getValue();
-            //addStartTimeWithClear("checkCard()");
-            MyApplication.app.readCardOptV2.checkCard(cardType, mCheckCardCallback, 60);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
     private final CheckCardCallbackV2 mCheckCardCallback = new CheckCardCallbackV2Wrapper() {
 
@@ -206,31 +169,24 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
             String track1 = Utility.null2String(bundle.getString("TRACK1"));
             String track2 = Utility.null2String(bundle.getString("TRACK2"));
             String track3 = Utility.null2String(bundle.getString("TRACK3"));
-            runOnUiThread(() -> {
+            mActivity.runOnUiThread(() -> {
                 String value = "track1:" + track1 + "\ntrack2:" + track2 + "\ntrack3:" + track3;
 
                 LogUtil.e(Constant.TAG, "value: "+value);
 
-                //6229342404220087D330622033282569000F
-                //6229344706739327=250822079305154000
                 try{
-//                    String[] info = track2.split("D");
-                    String cardNo = track2.substring(0, 16);
-                    String expDt = track2.substring(17, 21);
-                    showDisplay(cardNo,expDt);
-                }catch (Exception ex){showToast(ex.getMessage());}
+                    CardInfo cardInfo = GetEMVCardInfo.parseTrack2(track2);
+                    LogUtil.e(Constant.TAG, "findMagCard_cardInfo###:"+cardInfo.toString());
+
+                    replayResult(cardInfo.cardNo,cardInfo.expireDate);
+
+//                    transactProcess();
+                }catch (Exception ex){showError(ex.getMessage());}
             });
+            mCardInfo.track1 = track1;
+            mCardInfo.track2 = track2;
+            mCardInfo.track3 = track3;
 
-
-            /*String pan = bundle.getString("pan");
-            String name = bundle.getString("name");
-            String expire = bundle.getString("expire");
-            String serviceCode = bundle.getString("servicecode");
-            String result = "pan = " + pan + "\nname = " + name + "\nexpire = " + expire + "\nserviceCode = " + serviceCode;
-
-            LogUtil.e(Constant.TAG, "pan = " + pan + ",name = " + name + ",expire = " + expire + ",serviceCode = " + serviceCode);
-            mCarType = AidlConstantsV2.CardType.MAGNETIC.getValue();*/
-            transactProcess();
 
         }
 
@@ -240,11 +196,12 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
             LogUtil.e(Constant.TAG, "findICCard:" + atr);
 //            showSpendTime();
             mCarType = AidlConstantsV2.CardType.IC.getValue();
-            runOnUiThread(
+            mActivity.runOnUiThread(
                     () -> {
                         String text = "atr: " + atr;
+                        mCardInfo.atr = atr;
                         LogUtil.e("dMoneyLog", "card_atr:" + atr);
-                        showDisplay(atr,null);
+                        //replayResult(atr,null);
                     }
             );
             transactProcess();
@@ -253,18 +210,18 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
         /**
          * Find IC card
          *
-         * @param info return data，contain the following keys:
+         * @paraminfo return data，contain the following keys:
          *             <br/>cardType: card type (int)
          *             <br/>atr: card's ATR (String)
          */
-        @Override
+        /*@Override
         public void findICCardEx(Bundle info) throws RemoteException {
 //            addEndTime("checkCard()");
             LogUtil.e(Constant.TAG, "findICCard_*_*:" + Utility.bundle2String(info));
 //            tvCardNo.setText(Utility.bundle2String(info));
 //            handleResult(true, info);
 //            showSpendTime();
-        }
+        }*/
 
 
         @Override
@@ -273,10 +230,11 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
             LogUtil.e(Constant.TAG, "findRFCard:" + uuid);
             //showSpendTime();
             mCarType = AidlConstantsV2.CardType.NFC.getValue();
-            runOnUiThread(
+            mActivity.runOnUiThread(
                     () -> {
 //                        String text = getString(R.string.card_uuid) + uuid;
 //                        tvUUID.setText(text);
+                        mCardInfo.uuid = uuid;
                         LogUtil.e("dMoneyLog", "card_uuid:" + uuid);
 //                        tvAtr.setText(R.string.card_atr);
                     }
@@ -289,7 +247,7 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
             //addEndTime("checkCard()");
             String error = "onError:" + message + " -- " + code;
             LogUtil.e(Constant.TAG, error);
-            showToast(error);
+            showError(error);
 //            dismissLoadingDialog();
 //            showSpendTime();
         }
@@ -301,19 +259,11 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
             String msg = bundle.getString("message");
             String error = "onError:" + msg + " -- " + code;
             LogUtil.e(Constant.TAG, error);
-            showToast(error);
+            showError(error);
             //handleResult(null);
             //showSpendTime();
         }
     };
-
-    private void showDisplay(String cardNo, String expDt) {
-        if(cardNo==null)
-            cardNo="";
-        if(expDt==null)
-            expDt="";
-        tvCardNo.setText("cardNo: "+cardNo+"\nExpire Date: "+expDt);
-    }
 
     private void transactProcess() {
         LogUtil.e(Constant.TAG, "transactProcess");
@@ -327,7 +277,7 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
 //            GetCardInfo.getInstance(this, emvOptV2).getEMVListener();
 //            emvOptV2.transactProcess(emvTransData, mEMVListener);
 
-            mGetEMVCardInfo = GetEMVCardInfo.getInstance(this, emvOptV2);
+            mGetEMVCardInfo = GetEMVCardInfo.getInstance(mActivity, emvOptV2);
             emvOptV2.transactProcess(emvTransData, mGetEMVCardInfo.getEMVListener());
 
             mGetEMVCardInfo.getCardInfoListener(new ListenEMVCardInfo() {
@@ -335,13 +285,13 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
                 public void onListenCardInfo(CardInfo cardInfo) {
                     String displayMessage = "CardNo: " + cardInfo.cardNo + " \nExpireDate: " + cardInfo.expireDate + " \nServiceCode: " + cardInfo.serviceCode;
 //                    tvCardNo.setText(displayMessage);
-                    showDisplay(cardInfo.cardNo,cardInfo.expireDate);
+                    replayResult(cardInfo.cardNo,cardInfo.expireDate);
                     LogUtil.e(Constant.TAG, "cardNumber::" + cardInfo.cardNo + " expireDate:" + cardInfo.expireDate + " serviceCode:" + cardInfo.serviceCode);
                 }
 
                 @Override
                 public void onListenCardInfoError(String errorMessage) {
-                    showToast(errorMessage);
+                    showError(errorMessage);
                 }
             });
 
@@ -351,8 +301,26 @@ public class MagneticNfcIcActivity extends AppCompatActivity {
     }
 
 
-    private void showToast(String msg) {
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+    private void replayResult(String cardNo, String expDt) {
+        if(cardNo==null)
+            cardNo="";
+        if(expDt==null)
+            expDt="";
+        mCardInfo.cardNo = cardNo;
+        mCardInfo.expireDate = expDt;
+        mCardInfo.cardType = mCarType;
+
+        mCardReadListener.onReadResponse(mCardInfo);
+        //tvCardNo.setText("cardNo: "+cardNo+"\nExpire Date: "+expDt);
+    }
+
+    private void showError(String errorMessage) {
+        mCardReadListener.onReadError(errorMessage);
+    }
+
+
+    public void setOnCardReadListener(CardReadListener cardReadListener){
+        mCardReadListener = cardReadListener;
     }
 
 

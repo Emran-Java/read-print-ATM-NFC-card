@@ -42,7 +42,7 @@ public class GetEMVCardInfo {
     }
 
 
-    void getCardInfoListener(ListenEMVCardInfo listenEMVCardInfo){
+    public void getCardInfoListener(ListenEMVCardInfo listenEMVCardInfo){
         mListenEMVCardInfo = listenEMVCardInfo;
     }
 
@@ -199,7 +199,7 @@ public class GetEMVCardInfo {
             if (!TextUtils.isEmpty(Objects.requireNonNull(tlvMap.get("57")).getValue())) {
                 TLV tlv57 = tlvMap.get("57");
                 cardInfo = parseTrack2(tlv57.getValue());
-               // String displayMessage = "CardNo *_*_*_: " + cardInfo.cardNo + " \nExpireDate: " + cardInfo.expireDate + " \nService Code: " + cardInfo.serviceCode;
+                // String displayMessage = "CardNo *_*_*_: " + cardInfo.cardNo + " \nExpireDate: " + cardInfo.expireDate + " \nService Code: " + cardInfo.serviceCode;
 
 //                return cardInfo.cardNo;
                 return cardInfo;
@@ -213,7 +213,7 @@ public class GetEMVCardInfo {
                 mListenEMVCardInfo.onListenCardInfoError("TextUtils.isEmpty");
             }
         } catch (RemoteException e) {
-            mListenEMVCardInfo.onListenCardInfoError("RemoteException: "+e.getMessage());
+            mListenEMVCardInfo.onListenCardInfoError(e.getMessage());
             e.printStackTrace();
         }
 //        return "";
