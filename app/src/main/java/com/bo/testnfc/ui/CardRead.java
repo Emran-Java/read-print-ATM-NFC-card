@@ -230,38 +230,31 @@ public class CardRead {
             LogUtil.e(Constant.TAG, "findRFCard:" + uuid);
             //showSpendTime();
             mCarType = AidlConstantsV2.CardType.NFC.getValue();
-            mActivity.runOnUiThread(
-                    () -> {
-//                        String text = getString(R.string.card_uuid) + uuid;
-//                        tvUUID.setText(text);
-                        mCardInfo.uuid = uuid;
-                        LogUtil.e("dMoneyLog", "card_uuid:" + uuid);
-//                        tvAtr.setText(R.string.card_atr);
-                    }
-            );
+            mCardInfo.uuid = uuid;
+            LogUtil.e("dMoneyLog", "card_uuid:" + uuid);
+
             transactProcess();
         }
 
         @Override
         public void onError(int code, String message) throws RemoteException {
-            //addEndTime("checkCard()");
             String error = "onError:" + message + " -- " + code;
             LogUtil.e(Constant.TAG, error);
             showError(error);
 //            dismissLoadingDialog();
-//            showSpendTime();
         }
 
         @Override
         public void onErrorEx(Bundle bundle) throws RemoteException {
-            //addEndTime("checkCard()");
             int code = bundle.getInt("code");
             String msg = bundle.getString("message");
-            String error = "onError:" + msg + " -- " + code;
+            String error = "onErrorEx:" + msg + " -- " + code;
             LogUtil.e(Constant.TAG, error);
+
+//            if(code==-2891 || code==-20001) error = "";
+
             showError(error);
             //handleResult(null);
-            //showSpendTime();
         }
     };
 
