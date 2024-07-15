@@ -27,7 +27,7 @@ public class CardRead {
 
     private CardReadListener mCardReadListener;
     private static CardRead mCardRead;
-    private Activity mActivity;
+    private final Activity mActivity;
 
     private GetEMVCardInfo mGetEMVCardInfo;
     private EMVOptV2 emvOptV2 = MyApplication.app.emvOptV2;
